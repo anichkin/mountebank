@@ -8,7 +8,9 @@ const mountebank = require('../src/mountebank'),
     http = require('http'),
     Q = require('q'),
     ejs = require('ejs'),
-    yargs = require('yargs');
+    yargs = require('yargs'),
+    properties = require("properties"),
+    lodashMerge = require("lodash.merge");
 
 function error (message) {
     console.error(`${message}\n`);
@@ -133,24 +135,63 @@ function getContentsOrExit (file, server) {
     }
 }
 
-var CONFIG_FILE_PATH = null;
-function loadConfig (options, server) {
+const loadPropertiesFile = (fullPathToFile) => {
+    const deferred = Q.defer();
+
+    properties.parse(fullPathToFile, {
+        namespaces: true,
+        path: true,
+        variables: true
+    }, (err, data) => {
+        if (err) {
+            deferred.reject(err);
+        } else {
+            deferred.resolve(data);
+        }
+    });
+
+    return deferred.promise;
+}
+
+const loadProperties = () => {
+    const propertiesDir = path.join(process.cwd(), "config");
+    const defaultPropertiesFilePath = path.join(propertiesDir, "default.properties");
+    const envPropertiesFilePath = path.join(propertiesDir, "env.properties");
+
+    return Q.all([
+        loadPropertiesFile(defaultPropertiesFilePath).catch((err) => {
+            console.error("Cannot load default properties file: %j", err);
+            throw err;
+        }),
+        loadPropertiesFile(envPropertiesFilePath).catch(() => {
+            // env.properties file is optional, so falling back to an empty object
+            return {};
+        })
+    ]).then(([defaultProperties, envProperties]) => {
+        return lodashMerge(defaultProperties, envProperties);
+    });
+};
+
+const loadConfig = (options, server) => {
     if (!shouldLoadConfigFile(options)) {
         return Q(true);
     }
-    CONFIG_FILE_PATH = options.configfile;
-    const configContents = getContentsOrExit(options.configfile, server),
-        parsedContents = options.noParse ? configContents : ejs.render(configContents, {
-            filename: options.configfile,
-            stringify: stringify,
-            inject: stringify // backwards compatibility
-        }),
-        json = JSON.parse(parsedContents),
-        // [json] Assume they left off the outer imposters array
-        imposters = json.imposters || [json];
 
-    return putConfig(options, JSON.stringify({ imposters: imposters }));
-}
+    return loadProperties().then((properties) => {
+        const configContents = getContentsOrExit(options.configfile, server),
+            parsedContents = options.noParse ? configContents : ejs.render(configContents, {
+                filename: options.configfile,
+                stringify: stringify,
+                inject: stringify, // backwards compatibility
+                config: properties
+            }),
+            json = JSON.parse(parsedContents),
+            // [json] Assume they left off the outer imposters array
+            imposters = json.imposters || [json];
+
+        return putConfig(options, JSON.stringify({ imposters: imposters }));
+    });
+};
 
 function serverAt (options) {
     function start () {
