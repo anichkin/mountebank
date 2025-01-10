@@ -19,7 +19,7 @@
   },
   "main": "./src/mountebank.js",
   "scripts": {
-    "start": "bin/mb",
+    "start": "mb start --protofile protocols.json",
     "restart": "bin/mb restart",
     "stop": "bin/mb stop"
   },
@@ -60,7 +60,9 @@
     "winston": "3.2.1",
     "xmldom": "0.3.0",
     "xpath": "0.0.27",
-    "yargs": "15.3.0"
+    "yargs": "15.3.0",
+      "mountebank-grpc": "github:anichkin/mountebank-grpc"
+
   },
   "devDependencies": {
     "firebase-tools": "^8.0.0",

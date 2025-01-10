@@ -1,0 +1,5 @@
+{
+    "grpc": {
+        "createCommand": "node ./node_modules/mountebank-grpc/src/index.js"
+    }
+}
