@@ -1,0 +1,124 @@
+syntax = "proto3";
+package ibapi.middleware.models;
+
+option csharp_namespace = "FxPro.IBApi.Grpc.Middleware";
+
+import "ibapi.common.proto";
+
+// Reference to a specific account on a server.
+message Account {
+  // Alias or name of the server where the account is hosted.
+  string serverAlias = 1;
+
+  // Identifier for the account.
+  int64 account = 2;
+}
+
+// Reference to a specific trading account on a server with an information of a profile id
+message TradingAccount {
+  // Alias or name of the server where the account is hosted.
+  string serverAlias = 1;
+
+  // Identifier for the account.
+  int64 account = 2;
+
+  // Id of the trader profile 
+  common.Uuid cfdProfileId = 3;
+}
+
+// Code representing a specific partnership.
+message PartnershipCode {
+  // Code identifying the partnership.
+  string code = 1;
+}
+
+// Code representing a specific partnership type.
+message PartnershipTypeCode {
+  // Code identifying the partnership type.
+  string code = 1;
+}
+
+// Code representing a specific jurisdiction.
+message JurisdictionCode {
+  // Code identifying the jurisdiction.
+  string code = 1;
+}
+
+// Code representing a specific account type.
+message AccountTypeCode {
+  // Code identifying the account type.
+  string code = 1;
+}
+
+// trading platform group
+message PlatformGroup {
+  string name = 1;
+}
+
+// Link-Entity between partnership and trading account
+message Membership {
+  // The trading account associated with the membership.
+  Account account = 1;
+
+  // The partnership associated with the membership.
+  PartnershipCode partnershipCode = 2;
+}
+
+// A list of the membership objects.
+message ListOfMembership {
+  // List of the membership entries.
+  repeated Membership items = 1;
+}
+
+// Definition of the Partnership message.
+message Partnership {
+  reserved 7;
+
+  // Code representing the partnership.
+  PartnershipCode code = 1;
+
+  // Type code for the partnership.
+  PartnershipTypeCode typeCode = 2;
+
+  // Display name of the partnership.
+  string displayName = 3;
+
+  // Partnership activity status.
+  common.PartnershipStatus status = 4;
+
+  // Jurisdictions the partnership operates in.
+  repeated JurisdictionCode jurisdictions = 5;
+
+  // Count of members.
+  int32 memberCount = 6;
+
+//  // Count of subs.
+//  int32 subCount = 7;
+
+  // IB partnership identifier
+  PartnershipId partnershipId = 8;
+}
+
+// A list of partnership objects.
+message ListOfPartnership {
+  // List of partnership entries.
+  repeated Partnership items = 1;
+}
+
+// Code representing a specific template
+message TemplateCode {
+  // Code identifying the template
+  string code = 1;
+}
+
+// Code representing a specific country
+message CountryCode {
+  // Country 2-digit code (ISO 3166-1 alpha-2)
+  string code = 1;
+}
+
+// Describes a reference to a partnership.
+message PartnershipId {
+  // Unique identifier for the partnership.
+  int32 partnershipId = 1;
+}

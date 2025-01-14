@@ -1,0 +1,253 @@
+syntax = "proto3";
+package ibapi.middleware.services;
+
+option csharp_namespace = "FxPro.IBApi.Grpc.Middleware";
+
+import "ibapi.common.proto";
+import "ibapi.middleware.models.proto";
+import "google/protobuf/wrappers.proto";
+
+// Definition of the MembershipService service.
+service MembershipService {
+  // Attach an account to a partnership.
+  rpc Attach(AttachAccountReq) returns (AttachAccountRes);
+
+  // Get membership information for an account.
+  rpc Get(GetMembershipReq) returns (GetMembershipRes);
+
+  // List memberships for an account
+  rpc List(ListMembershipsReq) returns (ListMembershipsRes);
+}
+
+// Request message to attach a trading account to a partnership.
+message AttachAccountReq {
+  // The account associated with the membership.
+  models.TradingAccount account = 1;
+
+  // The partnership code associated with the membership.
+  models.PartnershipCode partnershipCode = 2;
+
+  // Jurisdiction code for the membership.
+  models.JurisdictionCode jurisdictionCode = 3;
+
+  // Account type code for the membership.
+  models.AccountTypeCode accountTypeCode = 4;
+
+  // Trading platform group to which trading account belongs.
+  // Is only needed for backward migration. Information is not stored in ibapi
+  models.PlatformGroup group = 5;
+}
+
+message AttachAccountRes {
+  // Is set to true when we successfully attached account
+  bool isSuccessful = 1;
+  // Is only set when we couldn't attach account
+  google.protobuf.StringValue failReason = 2;
+}
+
+// Request message to get membership information for an account.
+message GetMembershipReq {
+  // The account for which membership information is requested.
+  models.Account account = 1;
+}
+
+message GetMembershipRes {
+  models.Membership membership = 1;
+}
+
+message ListMembershipsReq {
+  // cfd profile id to which trading accounts are linked
+  common.Uuid cfdProfileId = 1;
+}
+
+message ListMembershipsRes {
+  repeated models.Membership memberships = 1;
+}
+
+// Definition of the PartnerService service.
+service PartnerService {
+  // Register a new partner.
+  rpc Register(RegisterPartnerReq) returns (RegisterPartnerRes);
+
+  // Sync new partners data to partners system.
+  // Is called by mw overlord service when someone changes partner data in ERP
+  rpc Sync(SyncPartnerReq) returns (SyncPartnerRes);
+}
+
+// Request message to register a partner and create a default partnership with the specified details.
+message RegisterPartnerReq {
+  // Partner product/profile Id (an external id in the current system)
+  common.Uuid partnerProfileId = 1;
+
+  // The email address of the partner to be registered.
+  string email = 2;
+
+  // The country code associated with the partner.
+  models.CountryCode country = 3;
+
+  // The wallet of the partner.
+  models.Account wallet = 4;
+
+  // The name of the partner
+  string name = 5;
+
+  // Referrer's partnership under which we should add new partnership
+  models.PartnershipCode referrer = 6;
+}
+
+message RegisterPartnerRes {
+  // The partnership code of the registered partner
+  string partnershipCode = 1;
+
+  // indicate non-blocking issues that didn't prevent the partner from being created but might require client attention
+  // is set when encounters non-blocking issues, otherwise is not set
+  google.protobuf.StringValue warningCode = 2;
+}
+
+// Request message to sync partner data in partners system
+message SyncPartnerReq {
+  // profile UUID from middleware to uniquely identify partner
+  common.Uuid partnerProfileId = 1;
+
+  // new partner email
+  string email = 2;
+
+  // new partner name
+  string name = 3;
+
+  // new partner country
+  models.CountryCode country = 4;
+}
+
+message SyncPartnerRes {
+  // Is set to true when we successfully updated partner data
+  bool isSuccessful = 1;
+
+  // Is only set when:
+  //   1. we couldn't find partner
+  //   2. new email is already taken by different partner
+  google.protobuf.StringValue failReason = 2;
+}
+
+// Definition of the PartnershipService service.
+service PartnershipService {
+  // Get partnership information based on its partnership code.
+  rpc Get(GetPartnershipReq) returns (GetPartnershipRes);
+
+  // Return available jurisdictions for the passed partnership
+  rpc GetAvailableJurisdictions(GetAvailableJurisdictionsReq) returns (GetAvailableJurisdictionsRes);
+
+  // Lookup valid partnership based on partnership code and jurisdiction code
+  rpc Lookup(LookupPartnershipReq) returns (LookupPartnershipRes);
+
+  // List partnerships based on optional filters like partnership type and jurisdiction code.
+  rpc List(ListPartnershipsReq) returns (ListPartnershipsRes);
+
+//  // List sub-partnerships under a specific partnership.
+//  rpc ListSubs(ListSubPartnershipsReq) returns (ListSubPartnershipsRes);
+}
+
+// Request message to get partnership information by its partnership code.
+message GetPartnershipReq {
+  // The partnership code for which information is requested.
+  models.PartnershipCode partnershipCode = 1;
+}
+
+message GetPartnershipRes {
+  models.Partnership partnership = 1;
+}
+
+message GetAvailableJurisdictionsReq {
+  // Can have any value. No validation for existing partnership
+  models.PartnershipCode partnershipCode = 1;
+}
+
+message GetAvailableJurisdictionsRes {
+  // Available jurisdictions. When partnership is not found then returns empty collection
+  repeated models.JurisdictionCode availableJurisdictions = 1;
+}
+
+// Request message to get valid partnership by partnership code.
+// Different partnership can be returned as a result.
+message LookupPartnershipReq {
+  // The partnership code to lookup by
+  // If omitted then default partnership for the country is used
+  models.PartnershipCode partnershipCode = 1;
+
+  // Jurisdiction code in which the partnership must work
+  models.JurisdictionCode jurisdictionCode = 2;
+
+  // Country code for specifying default partnership for country
+  models.CountryCode countryCode = 3;
+}
+
+message LookupPartnershipRes {
+  // A partnership to which trading account can be attached
+  models.Partnership partnership = 1;
+}
+
+// Request message to list partnerships based on filters.
+message ListPartnershipsReq {
+  // Filter partnerships by partner profile UUID (optional).
+  common.Uuid partnerProfileId = 1;
+
+  // Filter partnerships by cfd profile UUID (optional).
+  common.Uuid cfdProfileId = 2;
+
+  // Filter partnerships by partnership type code (optional).
+  models.PartnershipTypeCode partnershipTypeCode = 3;
+
+  // Filter partnerships by jurisdiction code (optional).
+  models.JurisdictionCode jurisdictionCode = 4;
+
+  // Search text to filter partnerships by display name, code or partner email (optional).
+  google.protobuf.StringValue searchText = 5;
+
+  // Include terminated partnerships (optional, by default false).
+  bool includeTerminated = 6;
+
+  // Page information (optional, by default 0-100).
+  common.Page page = 7;
+}
+
+message ListPartnershipsRes {
+  models.ListOfPartnership partnerships = 1;
+}
+
+// Request message to list sub-partnerships under a specific partnership.
+message ListSubPartnershipsReq {
+  // The partnership code of the master partnership under which sub-partnerships are listed.
+  models.PartnershipCode partnershipCode = 1;
+
+  // Filter sub-partnerships by partnership type code (optional).
+  models.PartnershipTypeCode partnershipTypeCode = 2;
+
+  // Filter sub-partnerships by jurisdiction code (optional).
+  models.JurisdictionCode jurisdictionCode = 3;
+
+  // Search text to filter sub-partnerships by display name, code or partner email (optional).
+  google.protobuf.StringValue searchText = 4;
+
+  // Page information (optional, by default 0-100).
+  common.Page page = 5;
+}
+
+message ListSubPartnershipsRes {
+  models.ListOfPartnership subPartnerships = 1;
+}
+
+// Definition of the TemplateService service.
+service TemplateService {
+  // Get mapping between countries and partnership templates
+  rpc GetTemplatesByCountry(GetTemplatesByCountryReq) returns (GetTemplatesByCountryRes);
+}
+
+// Request message to get all mappings between countries and templates.
+message GetTemplatesByCountryReq {
+}
+
+// Response message representing all mappings between countries and templates.
+message GetTemplatesByCountryRes {
+  // Mappings of template code by country alpha-2 code
+  map<string, string> templatesByCountry = 1;
+}

@@ -1,0 +1,40 @@
+syntax = "proto3";
+package ibapi.common;
+
+option csharp_namespace = "FxPro.IBApi.Grpc.Common";
+
+// Describes a UUID value. 
+message Uuid {
+  // Represents a 128-bit universally unique identifier.
+  string value = 1;
+}
+
+// Describes a page of requested data.
+message Page {
+  // The offset of the first record to return, defaults to 0.
+  int32 offset = 1;
+  // The maximum number of records to return, defaults to 100.
+  int32 limit = 2;
+}
+
+// Calculated partnership status based on provided/current datetime
+enum PartnershipStatus {
+  UNSPECIFIED = 0;
+  // The status of a partnership that has already begun but has not yet ended.
+  ACTIVE = 1;
+  // Status of a partnership that has already ended.
+  TERMINATED = 2;
+  // Status of a partnership that has not yet begun. Also used in case when partner has no partnerships.
+  CREATED = 3;
+}
+
+message Date {
+  // Year of the date. Must be from 1 to 9999
+  int32 year = 1;
+
+  // Month of a year. Must be from 1 to 12
+  int32 month = 2;
+
+  // Day of a month. Must be from 1 to 31 and valid for the year and month
+  int32 day = 3;
+}
