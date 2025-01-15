@@ -61,7 +61,7 @@
     "xmldom": "0.3.0",
     "xpath": "0.0.27",
     "yargs": "15.3.0",
-      "mountebank-grpc": "github:anichkin/mountebank-grpc"
+      "mountebank-grpc": "https://github.com/anichkin/mountebank-grpc.git#master"
 
   },
   "devDependencies": {
