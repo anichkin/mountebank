@@ -1,6 +1,6 @@
-FROM node:12
+FROM node:16
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm install --production
 COPY . .
 
